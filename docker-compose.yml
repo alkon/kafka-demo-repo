@@ -1,0 +1,26 @@
+services:
+  kafka:
+    image: 'bitnami/kafka:latest' # Using Kafka latest for KRaft
+    ports:
+      - '9092:9092' # For client connections
+    environment:
+      # KRaft configuration
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller # This node acts as both broker and controller
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093 # Node ID and internal controller listener
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093 # Client listener and internal controller listener
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092 # How clients connect externally
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER # Name of the controller listener
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1 # Required for KRaft, set to 1 for single node
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1 # Required for KRaft, set to 1 for single node
+      - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data/kraft-combined-logs # Directory for Kafka logs and KRaft metadata
+      - ALLOW_PLAINTEXT_LISTENER=yes # Still needed for PLAINTEXT listener
+      # IMPORTANT: This is a generated UUID. Do NOT change it unless you want to reformat Kafka storage.
+      - KAFKA_CLUSTER_ID=5e9d2a1b-c7f8-4e09-b3d2-1a6c8e4f0d7b
+      # Fix for unbound variable error: Define security protocol for each listener
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
